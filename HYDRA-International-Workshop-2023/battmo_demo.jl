@@ -64,7 +64,7 @@ Set your discharge modifier as a percentage below. The discharge curve is quickl
 
 
 # ╔═╡ 58a378b1-9bcc-4779-a1d9-8a9919df4a41
-@bind c_delta Slider(range(-0.1, 10.0, length = 100), default = 0.0)
+@bind c_delta Slider(range(-0.09, 10.0, length = 100), default = 0.0)
 
 # ╔═╡ f0891d30-3e0d-4218-b727-5e85bccb340e
 md"""
@@ -101,6 +101,30 @@ function get_cap(states, dt)
 	cap  = cumsum(I.*dt)/3600 # in Ah
 end
 
+# ╔═╡ 5b602e28-12ae-4d78-ab4d-9bd460ae442b
+function computeEnergy(states, timesteps)
+	E    = [state[:BPP][:Phi][1] for state in states]
+	I    = [state[:BPP][:Current][1] for state in states]
+
+    Emid = (E[2 : end] + E[1 : end - 1])/2 
+    Imid = (I[2 : end] + I[1 : end - 1])/2
+
+    return sum(Emid.*Imid.*timesteps[1 : end - 1])/3600 
+end
+
+# ╔═╡ 57a19639-a57d-4cc2-92d4-3757793d0c27
+# plotly()
+gr()
+
+# ╔═╡ 6b984ab8-7cd8-4b3f-b179-6324ed23c86e
+Nstep = 100
+
+# ╔═╡ d0eb5413-ee2f-413f-b62a-1412bde7c5c7
+Nrampup = 5
+
+# ╔═╡ d6bab3df-c3e2-47b2-aa0f-854ee8617155
+@bind timestep_ix Slider(1:(Nstep + Nrampup), default = 1)
+
 # ╔═╡ 71a806ef-53af-4012-b1c7-37d2b24498b8
 begin
 	state0 = extra[:state0]
@@ -120,10 +144,10 @@ begin
 	    tup = Float64(jsondict["TimeStepping"]["rampupTime"])
 	    cFun(time) = BattMo.currentFun(time, inputI, tup)
 	
-		n = 100
+		n = Nstep
 		total = con.hour/c*1.2
 	    dt = total/n
-	    timesteps = BattMo.rampupTimesteps(total, dt, 5);    
+	    timesteps = BattMo.rampupTimesteps(total, dt, Nrampup);    
 	    time = cumsum(timesteps)
 	
 	    currents = setup_forces(model[:BPP], policy = SimpleCVPolicy(cFun, minE))
@@ -144,9 +168,6 @@ begin
 	
 	E_new = [state[:BPP][:Phi][1] for state in states_new];
 end
-
-# ╔═╡ d6bab3df-c3e2-47b2-aa0f-854ee8617155
-@bind timestep_ix Slider(eachindex(states_new), default = 1)
 
 # ╔═╡ 35eeff7c-1145-4172-b2a5-6614edba2547
 begin
@@ -181,23 +202,6 @@ time_spent = @sprintf "%3.1f ms" stats.time_sum.total*1000
 # ╔═╡ 25bfa365-36e8-41fd-a5b8-2a2f8b80b720
 perc = @sprintf "%3.2f" c0+c_delta
 
-# ╔═╡ 5e2111b7-9585-43a6-9ada-1d0fa7a5a49f
-md"
-### Your current discharge rate is $(perc)!
-Last simulation performed $(stats.newtons) Newton iterations in $time_spent
-"
-
-# ╔═╡ 5b602e28-12ae-4d78-ab4d-9bd460ae442b
-function computeEnergy(states, timesteps)
-	E    = [state[:BPP][:Phi][1] for state in states]
-	I    = [state[:BPP][:Current][1] for state in states]
-
-    Emid = (E[2 : end] + E[1 : end - 1])/2 
-    Imid = (I[2 : end] + I[1 : end - 1])/2
-
-    return sum(Emid.*Imid.*timesteps[1 : end - 1])/3600 
-end
-
 # ╔═╡ aa97a563-e004-4c34-9a59-485a7029f046
 begin
 	energy_base = computeEnergy(states, timesteps0)
@@ -217,19 +221,21 @@ begin
 end
 
 
-# ╔═╡ 57a19639-a57d-4cc2-92d4-3757793d0c27
-# plotly()
-gr()
+# ╔═╡ 5e2111b7-9585-43a6-9ada-1d0fa7a5a49f
+md"
+### Your current discharge rate is $(perc)!
+Last simulation performed $(stats.newtons) Newton iterations in $time_spent
+"
 
 # ╔═╡ Cell order:
 # ╟─752a8f85-e7a8-4fce-9b8f-c3089d18967a
 # ╟─24b9f4ef-ab5c-4c80-af83-f16884a27732
 # ╟─aa97a563-e004-4c34-9a59-485a7029f046
 # ╟─5e5f8eff-344e-4760-ac12-558ffc1344ee
-# ╠═58a378b1-9bcc-4779-a1d9-8a9919df4a41
+# ╟─58a378b1-9bcc-4779-a1d9-8a9919df4a41
 # ╟─5e2111b7-9585-43a6-9ada-1d0fa7a5a49f
 # ╟─f0891d30-3e0d-4218-b727-5e85bccb340e
-# ╟─d6bab3df-c3e2-47b2-aa0f-854ee8617155
+# ╠═d6bab3df-c3e2-47b2-aa0f-854ee8617155
 # ╟─35eeff7c-1145-4172-b2a5-6614edba2547
 # ╟─103007f0-144b-11ee-02df-6ff3fc7c0678
 # ╟─64f8cc10-b20e-460d-a0cd-07077e3d808e
@@ -251,3 +257,5 @@ gr()
 # ╠═d9c74eb9-138d-4449-ba8b-a127ac08a0c0
 # ╠═5b602e28-12ae-4d78-ab4d-9bd460ae442b
 # ╠═57a19639-a57d-4cc2-92d4-3757793d0c27
+# ╠═6b984ab8-7cd8-4b3f-b179-6324ed23c86e
+# ╠═d0eb5413-ee2f-413f-b62a-1412bde7c5c7
