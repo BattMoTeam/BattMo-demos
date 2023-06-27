@@ -59,7 +59,7 @@ BattMo.jl is a Julia version of the BattMo toolbox that provides:
 
 md"
 ## Try adjusting the discharge rate
-Set your discharge modifier as a percentage below. The discharge curve is immediately updated after a full fast simulation is run using BattMo.jl!
+Set your discharge modifier as a percentage below. The discharge curve is quickly updated after a full fast simulation is run using BattMo.jl!
 "
 
 
@@ -139,17 +139,6 @@ begin
 	E_new = [state[:BPP][:Phi][1] for state in states_new];
 end
 
-# ╔═╡ aa97a563-e004-4c34-9a59-485a7029f046
-begin
-	plot(cap0, E, label = "Base case", lw = 3)
-	plot!(cap_new, E_new, label = "Your choice", lw = 3, ls = :dash)
-	tmp = @sprintf "%3.2f" c_factor
-	title!("Discharge rate scale = $perc")
-	xlabel!("Capacity (Ah)")
-	ylabel!("Voltage (V)")
-end
-
-
 # ╔═╡ 64f8cc10-b20e-460d-a0cd-07077e3d808e
 stats = Jutul.report_stats(report_new);
 
@@ -162,10 +151,40 @@ md"
 Last simulation performed $(stats.newtons) Newton iterations in $time_spent
 "
 
+# ╔═╡ 5b602e28-12ae-4d78-ab4d-9bd460ae442b
+function computeEnergy(states, timesteps)
+	E    = [state[:BPP][:Phi][1] for state in states]
+	I    = [state[:BPP][:Current][1] for state in states]
+
+    Emid = (E[2 : end] + E[1 : end - 1])/2 
+    Imid = (I[2 : end] + I[1 : end - 1])/2
+
+    return sum(Emid.*Imid.*timesteps[1 : end - 1])/3600 
+end
+
+# ╔═╡ aa97a563-e004-4c34-9a59-485a7029f046
+begin
+	energy_base = computeEnergy(states, timesteps0)
+	energy_new = computeEnergy(states_new, timesteps)
+	a = plot(cap0, E, label = "Base case", lw = 3)
+	plot!(cap_new, E_new, label = "Your choice", lw = 3, ls = :dash)
+	tmp = @sprintf "%3.2f" c_factor
+	title!("Discharge rate scale = $perc")
+	xlabel!("Capacity / Ah")
+	ylabel!("Voltage / V")
+	b = bar([energy_base, energy_new], orientation = :h, legend = false)
+	ylims!(0, 2.5)
+	xlabel!("Recovered energy / Wh")
+	xlims!(0.5*min(energy_base, energy_new), 1.1*max(energy_base, energy_new))
+	yticks!([1, 2], ["Base case", "Your choice"])
+	plot(a, b, layout = grid(2, 1, heights=[0.8, 0.2]))
+end
+
+
 # ╔═╡ Cell order:
 # ╟─752a8f85-e7a8-4fce-9b8f-c3089d18967a
 # ╟─24b9f4ef-ab5c-4c80-af83-f16884a27732
-# ╠═aa97a563-e004-4c34-9a59-485a7029f046
+# ╟─aa97a563-e004-4c34-9a59-485a7029f046
 # ╟─5e5f8eff-344e-4760-ac12-558ffc1344ee
 # ╟─58a378b1-9bcc-4779-a1d9-8a9919df4a41
 # ╟─5e2111b7-9585-43a6-9ada-1d0fa7a5a49f
@@ -187,3 +206,4 @@ Last simulation performed $(stats.newtons) Newton iterations in $time_spent
 # ╠═ef9d0c67-8dae-4b67-8471-0dbcea7da9c1
 # ╠═28d1cb26-1cbf-4c96-9e4e-3eb1f20edad0
 # ╠═d9c74eb9-138d-4449-ba8b-a127ac08a0c0
+# ╠═5b602e28-12ae-4d78-ab4d-9bd460ae442b
