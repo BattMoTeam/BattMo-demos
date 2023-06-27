@@ -138,6 +138,16 @@ md"
 Last simulation performed $(stats.newtons) Newton iterations in $time_spent
 "
 
+# ╔═╡ 28d1cb26-1cbf-4c96-9e4e-3eb1f20edad0
+html"""
+<style>
+input[type*="range"] {
+	width: 100%;
+}
+</style>
+"""
+
+
 # ╔═╡ Cell order:
 # ╟─752a8f85-e7a8-4fce-9b8f-c3089d18967a
 # ╟─24b9f4ef-ab5c-4c80-af83-f16884a27732
@@ -161,3 +171,4 @@ Last simulation performed $(stats.newtons) Newton iterations in $time_spent
 # ╠═74263966-438a-4e42-9ebd-0e840077b8e9
 # ╠═25bfa365-36e8-41fd-a5b8-2a2f8b80b720
 # ╠═ef9d0c67-8dae-4b67-8471-0dbcea7da9c1
+# ╠═28d1cb26-1cbf-4c96-9e4e-3eb1f20edad0
