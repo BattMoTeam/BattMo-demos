@@ -98,7 +98,7 @@ function get_cap(states, dt)
 	cap  = cumsum(I.*dt)/3600 # in Ah
 end
 
-# ╔═╡ 63005f86-bd56-46e3-934f-57a10af8a060
+# ╔═╡ 71a806ef-53af-4012-b1c7-37d2b24498b8
 begin
 	state0 = extra[:state0]
 	parameters = extra[:parameters]
@@ -108,15 +108,10 @@ begin
 	forces = extra[:forces]
 	timesteps0 = extra[:timesteps]
 	time0 = cumsum(timesteps0)
-	timesteps = repeat(timesteps0, 2)
 	cap0 = get_cap(states, timesteps0)
     
-    time = cumsum(timesteps)
     E    = [state[:BPP][:Phi][1] for state in states]
-end
 
-# ╔═╡ 71a806ef-53af-4012-b1c7-37d2b24498b8
-begin
 	cap    = BattMo.computeCellCapacity(model)
     con    = BattMo.Constants()
 
@@ -127,7 +122,13 @@ begin
     minE = jsondict["Control"]["lowerCutoffVoltage"]
     tup = Float64(jsondict["TimeStepping"]["rampupTime"])
     cFun(time) = BattMo.currentFun(time, inputI, tup)
-    
+
+	n = 100
+	total = con.hour/CRate*1.2
+    dt = total/n
+    timesteps = BattMo.rampupTimesteps(total, dt, 5);    
+    time = cumsum(timesteps)
+
     currents = setup_forces(model[:BPP], policy = SimpleCVPolicy(cFun, minE))
     forces_new = setup_forces(model, BPP = currents) 
 
@@ -179,7 +180,6 @@ Last simulation performed $(stats.newtons) Newton iterations in $time_spent
 # ╟─edec07c4-6e80-499a-92ec-c748dccfa34c
 # ╠═1431be70-414f-4189-8674-3556a5728d32
 # ╠═a73c7c2b-ac66-4b78-a0a7-36cb73637764
-# ╠═63005f86-bd56-46e3-934f-57a10af8a060
 # ╠═71a806ef-53af-4012-b1c7-37d2b24498b8
 # ╠═77ba22b5-35aa-4195-a0e2-4ba40406a04c
 # ╠═74263966-438a-4e42-9ebd-0e840077b8e9
