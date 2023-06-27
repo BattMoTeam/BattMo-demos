@@ -96,20 +96,21 @@ input[type*="range"] {
 
 # ╔═╡ d9c74eb9-138d-4449-ba8b-a127ac08a0c0
 function get_cap(states, dt)
-	E    = [state[:BPP][:Phi][1] for state in states]
-	I    = [state[:BPP][:Current][1] for state in states]
-	cap  = cumsum(I.*dt)/3600 # in Ah
+    E    = [state[:BPP][:Phi][1] for state in states]
+    I    = [state[:BPP][:Current][1] for state in states]
+    cap  = cumsum(I.*dt)/3600 # in Ah
 end
 
 # ╔═╡ 5b602e28-12ae-4d78-ab4d-9bd460ae442b
 function computeEnergy(states, timesteps)
-	E    = [state[:BPP][:Phi][1] for state in states]
-	I    = [state[:BPP][:Current][1] for state in states]
+    
+    E    = [state[:BPP][:Phi][1] for state in states]
+    I    = [state[:BPP][:Current][1] for state in states]
 
     Emid = (E[2 : end] + E[1 : end - 1])/2 
     Imid = (I[2 : end] + I[1 : end - 1])/2
 
-    return sum(Emid.*Imid.*timesteps[1 : end - 1])/3600 
+    return sum(Emid.*Imid.*timesteps[1 : end - 1])/3600
 end
 
 # ╔═╡ 57a19639-a57d-4cc2-92d4-3757793d0c27
@@ -127,70 +128,88 @@ Nrampup = 5
 
 # ╔═╡ 71a806ef-53af-4012-b1c7-37d2b24498b8
 begin
-	state0 = extra[:state0]
-	parameters = extra[:parameters]
-	sim = extra[:simulator]
-	model = sim.model
-	config = extra[:config]
-	forces = extra[:forces]    
 
-	cap    = BattMo.computeCellCapacity(model)
-    con    = BattMo.Constants()
-	function simulate_with_crate(c)
-	    inputI = (cap/con.hour)*c
-	
-	    # @. state0[:BPP][:Phi] = minE*1.5
-	    minE = jsondict["Control"]["lowerCutoffVoltage"]
-	    tup = Float64(jsondict["TimeStepping"]["rampupTime"])
-	    cFun(time) = BattMo.currentFun(time, inputI, tup)
-	
-		n = Nstep
-		total = con.hour/c*1.2
-	    dt = total/n
-	    timesteps = BattMo.rampupTimesteps(total, dt, Nrampup);    
-	    time = cumsum(timesteps)
-	
-	    currents = setup_forces(model[:BPP], policy = SimpleCVPolicy(cFun, minE))
-	    forces_new = setup_forces(model, BPP = currents) 
-	
-		s, r = simulate!(sim, timesteps, config = config, forces = forces_new, state0 = state0)
-		return (s, time, timesteps, r)
-	end
-	c0 = 0.1
-	states, time0, timesteps0, reports0 = simulate_with_crate(c0)
-	cap0 = get_cap(states, timesteps0)
-	E    = [state[:BPP][:Phi][1] for state in states]
+    state0     = extra[:state0]
+    parameters = extra[:parameters]
+    sim        = extra[:simulator]
+    model      = sim.model
+    config     = extra[:config]
+    forces     = extra[:forces]
 
-	CRate  = c0 + c_delta
+    cap = BattMo.computeCellCapacity(model)
+    con = BattMo.Constants()
+    
+    function simulate_with_crate(c)
+	inputI = (cap/con.hour)*c
+	
+	# @. state0[:BPP][:Phi] = minE*1.5
+	minE = jsondict["Control"]["lowerCutoffVoltage"]
+	tup = Float64(jsondict["TimeStepping"]["rampupTime"])
+	cFun(time) = BattMo.currentFun(time, inputI, tup)
+	
+	n = Nstep
+	total = con.hour/c*1.2
+	dt = total/n
+	timesteps = BattMo.rampupTimesteps(total, dt, Nrampup);    
+	time = cumsum(timesteps)
+	
+	currents = setup_forces(model[:BPP], policy = SimpleCVPolicy(cFun, minE))
+	forces_new = setup_forces(model, BPP = currents) 
+	
+	s, r = simulate!(sim, timesteps, config = config, forces = forces_new, state0 = state0)
+	return (s, time, timesteps, r)
+    end
+    c0 = 0.1
+    states, time0, timesteps0, reports0 = simulate_with_crate(c0)
+    cap0 = get_cap(states, timesteps0)
+    E    = [state[:BPP][:Phi][1] for state in states]
+
+    CRate  = c0 + c_delta
     states_new, time, timesteps, reports = simulate_with_crate(CRate)
 
-	cap_new = get_cap(states_new, timesteps)
-	
-	E_new = [state[:BPP][:Phi][1] for state in states_new];
+    cap_new = get_cap(states_new, timesteps)
+    
+    E_new = [state[:BPP][:Phi][1] for state in states_new];
 end
 
 # ╔═╡ 35eeff7c-1145-4172-b2a5-6614edba2547
 begin
-	# f = x -> x[:ELYTE][:C]
-	function get_data_local(f::Symbol)
-		return states_new[timestep_ix][f][:Cp]
-	end
-	f3 = x -> x[:ELYTE][:C]
 
-	x3 = map(f3, states_new)
-	C_elyte = states_new[timestep_ix][:ELYTE][:C]
-	ns = length(states_new)
-	p1 = contourf(get_data_local(:NAM), title = "Negative material", ticks = false)
-	p2 = contourf(get_data_local(:PAM), title = "Positive material", ticks = false)
-	p3 = plot(C_elyte, title = "Electrolyte (step $timestep_ix)", legend = false, lw = 3, lc = :black)
+    function get_data_local(name::Symbol)
+        rp = model[name].system.discretization[:rp]
+        Nr = model[name].system.discretization[:N]
+        r  = cumsum(rp/Nr*ones(Nr))
+        x  = vec(model[name].domain.representation[:cell_centroids])
+        f(a) = a*1e6
+        r = f(r) # we convert to µm
+        x = f(x) # we convert to µm
+        z  = states_new[timestep_ix][name][:Cp]/1000 # We convert to mol/litre
+	return (x, r, z)
+    end
+    C_elyte = states_new[timestep_ix][:ELYTE][:C]/1000 # We convert to mol/litre
+    ns = length(states_new)
+    options = (xlabel="x / [µm]", ylabel="r / [µm]", colorbar_title="mol/L")
+    (x, r, z) = get_data_local(:NAM)
+    p1 = contourf((x, r, z), title = "Negative material", xticks = x[[1, end]], yticks = r[[1, end]]; options...)
+    (x, r, z) = get_data_local(:PAM)
+    p2 = contourf((x, r, z), title = "Positive material", xticks = x[[1, end]], yticks = r[[1, end]]; options...)
+    x = vec(model[:ELYTE].domain.representation[:cell_centroids])*1e6 # We convert to µm
+    p3 = plot(x, C_elyte,
+              title = "Electrolyte (step $timestep_ix)",
+              legend = false,
+              lw = 3,
+              lc = :black,
+              xlabel = "x / [µm]",
+              ylabel = "concentration / [mol/L]")
 
-	cmax = maximum(map(x -> maximum(x[:ELYTE][:C]), states_new))
-	ylims!(0, cmax)
-	l = @layout [b{0.5h}
-	grid(1,2)
-             
-	]
-	plot(p3, p1, p2, layout = l)
+    cmax = maximum(map(x -> maximum(x[:ELYTE][:C]), states_new))/1000
+    cmin = minimum(map(x -> minimum(x[:ELYTE][:C]), states_new))/1000
+    ylims!(cmin, cmax)
+    l = @layout [b{0.5h}
+	         grid(1,2)
+	         ]
+    plot(p3, p1, p2, layout = l)
+    
 end
 
 # ╔═╡ 64f8cc10-b20e-460d-a0cd-07077e3d808e
@@ -204,26 +223,26 @@ perc = @sprintf "%3.2f" c0+c_delta
 
 # ╔═╡ aa97a563-e004-4c34-9a59-485a7029f046
 begin
-	energy_base = computeEnergy(states, timesteps0)
-	energy_new = computeEnergy(states_new, timesteps)
-	a = plot(cap0, E, label = "CRate = $c0", lw = 3)
-	plot!(cap_new, E_new, label = "Your choice", lw = 3, ls = :dash)
-	tmp = @sprintf "%3.2f" c_delta
-	title!("C-Rate = $perc (base case: $c0)")
-	xlabel!("Capacity / Ah")
-	ylabel!("Voltage / V")
-	b = bar([energy_base, energy_new], orientation = :h, legend = false)
-	ylims!(0, 2.5)
-	xlabel!("Recovered energy / Wh")
-	xlims!(0.5*min(energy_base, energy_new), 1.1*max(energy_base, energy_new))
-	yticks!([1, 2], ["Base case", "Your choice"])
-	plot(a, b, layout = grid(2, 1, heights=[0.8, 0.2]))
+    energy_base = computeEnergy(states, timesteps0)
+    energy_new = computeEnergy(states_new, timesteps)
+    a = plot(cap0, E, label = "CRate = $c0", lw = 3)
+    plot!(cap_new, E_new, label = "Your choice", lw = 3, ls = :dash)
+    tmp = @sprintf "%3.2f" c_delta
+    title!("C-Rate = $perc (base case: $c0)")
+    xlabel!("Capacity / Ah")
+    ylabel!("Voltage / V")
+    b = bar([energy_base, energy_new], orientation = :h, legend = false)
+    ylims!(0, 2.5)
+    xlabel!("Recovered energy / Wh")
+    xlims!(0.5*min(energy_base, energy_new), 1.1*max(energy_base, energy_new))
+    yticks!([1, 2], ["Base case", "Your choice"])
+    plot(a, b, layout = grid(2, 1, heights=[0.8, 0.2]))
 end
 
 
 # ╔═╡ 5e2111b7-9585-43a6-9ada-1d0fa7a5a49f
 md"
-### Your current discharge rate is $(perc)!
+### Your current discharge rate is $(perc)
 Last simulation performed $(stats.newtons) Newton iterations in $time_spent
 "
 
@@ -233,7 +252,7 @@ Last simulation performed $(stats.newtons) Newton iterations in $time_spent
 # ╟─aa97a563-e004-4c34-9a59-485a7029f046
 # ╟─5e5f8eff-344e-4760-ac12-558ffc1344ee
 # ╟─58a378b1-9bcc-4779-a1d9-8a9919df4a41
-# ╟─5e2111b7-9585-43a6-9ada-1d0fa7a5a49f
+# ╠═5e2111b7-9585-43a6-9ada-1d0fa7a5a49f
 # ╟─f0891d30-3e0d-4218-b727-5e85bccb340e
 # ╠═d6bab3df-c3e2-47b2-aa0f-854ee8617155
 # ╟─35eeff7c-1145-4172-b2a5-6614edba2547
