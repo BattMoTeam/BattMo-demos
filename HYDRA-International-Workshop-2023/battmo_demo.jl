@@ -64,7 +64,10 @@ Set your discharge modifier as a percentage below. The discharge curve is immedi
 
 
 # ╔═╡ 58a378b1-9bcc-4779-a1d9-8a9919df4a41
-@bind c_factor Slider(range(10.0, 500.0, length = 500), default = 100.0)
+@bind c_factor Slider(range(-90.0, 300.0, length = 500), default = 0.0)
+
+# ╔═╡ c90f74ed-35ac-4cb3-a52f-dc80624fea4e
+
 
 # ╔═╡ 678b6f59-0bf7-48a0-afb1-51370a6f2871
 
@@ -93,7 +96,7 @@ begin
 	cap    = BattMo.computeCellCapacity(model)
     con    = BattMo.Constants()
 
-	CRate  = jsondict["Control"]["CRate"]*c_factor/100.0
+	CRate  = jsondict["Control"]["CRate"]*(100.0 + c_factor)/100.0
     inputI = (cap/con.hour)*CRate
 
     # @. state0[:BPP][:Phi] = minE*1.5
@@ -109,17 +112,6 @@ begin
 	E_new = [state[:BPP][:Phi][1] for state in states_new];
 end
 
-# ╔═╡ aa97a563-e004-4c34-9a59-485a7029f046
-begin
-	plot(time0, E, label = "Base case", lw = 3)
-	plot!(time, E_new, label = "Your choice", lw = 3, ls = :dash)
-	tmp = @sprintf "%3.2f" c_factor
-	title!("Discharge rate scale = $tmp %")
-	xlabel!("Time / s")
-	ylabel!("Voltage / V")
-end
-
-
 # ╔═╡ 64f8cc10-b20e-460d-a0cd-07077e3d808e
 stats = Jutul.report_stats(report_new);
 
@@ -127,7 +119,18 @@ stats = Jutul.report_stats(report_new);
 
 
 # ╔═╡ 25bfa365-36e8-41fd-a5b8-2a2f8b80b720
-perc = @sprintf "%3.2f%%" c_factor
+perc = @sprintf "%3.2f%%" 100+c_factor
+
+# ╔═╡ aa97a563-e004-4c34-9a59-485a7029f046
+begin
+	plot(time0, E, label = "Base case", lw = 3)
+	plot!(time, E_new, label = "Your choice", lw = 3, ls = :dash)
+	tmp = @sprintf "%3.2f" c_factor
+	title!("Discharge rate scale = $perc")
+	xlabel!("Time / s")
+	ylabel!("Voltage / V")
+end
+
 
 # ╔═╡ ef9d0c67-8dae-4b67-8471-0dbcea7da9c1
 time_spent = @sprintf "%3.1f ms" stats.time_sum.total*1000
@@ -155,6 +158,7 @@ input[type*="range"] {
 # ╟─5e5f8eff-344e-4760-ac12-558ffc1344ee
 # ╟─58a378b1-9bcc-4779-a1d9-8a9919df4a41
 # ╟─5e2111b7-9585-43a6-9ada-1d0fa7a5a49f
+# ╠═c90f74ed-35ac-4cb3-a52f-dc80624fea4e
 # ╟─64f8cc10-b20e-460d-a0cd-07077e3d808e
 # ╟─103007f0-144b-11ee-02df-6ff3fc7c0678
 # ╟─678b6f59-0bf7-48a0-afb1-51370a6f2871
@@ -166,7 +170,7 @@ input[type*="range"] {
 # ╠═1431be70-414f-4189-8674-3556a5728d32
 # ╠═a73c7c2b-ac66-4b78-a0a7-36cb73637764
 # ╠═63005f86-bd56-46e3-934f-57a10af8a060
-# ╟─71a806ef-53af-4012-b1c7-37d2b24498b8
+# ╠═71a806ef-53af-4012-b1c7-37d2b24498b8
 # ╠═77ba22b5-35aa-4195-a0e2-4ba40406a04c
 # ╠═74263966-438a-4e42-9ebd-0e840077b8e9
 # ╠═25bfa365-36e8-41fd-a5b8-2a2f8b80b720
