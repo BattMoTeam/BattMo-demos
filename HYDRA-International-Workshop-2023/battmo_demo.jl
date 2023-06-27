@@ -168,9 +168,11 @@ begin
 	x2 = map(f2, states_new)
 	x3 = map(f3, states_new)
 
-	p1 = contourf(hcat(x1...)', title = "Negative active material")
-	p2 = contourf(hcat(x2...)', title = "Positive active material")
-	p3 = contourf(hcat(x3...)', title = "Electrolyte")
+	ns = length(states_new)
+	@info size(hcat(x1...)') ns length(cap_new)
+	p1 = contourf(hcat(x1...)', title = "Negative material", ticks = false)
+	p2 = contourf(hcat(x2...)', title = "Positive material", ticks = false)
+	p3 = contourf(hcat(x3...)', title = "Electrolyte", ticks = false)
 
 	l = @layout [grid(1,2)
              b{0.5h}
@@ -220,7 +222,7 @@ end
 # ╔═╡ Cell order:
 # ╟─752a8f85-e7a8-4fce-9b8f-c3089d18967a
 # ╟─24b9f4ef-ab5c-4c80-af83-f16884a27732
-# ╟─aa97a563-e004-4c34-9a59-485a7029f046
+# ╠═aa97a563-e004-4c34-9a59-485a7029f046
 # ╟─5e5f8eff-344e-4760-ac12-558ffc1344ee
 # ╠═58a378b1-9bcc-4779-a1d9-8a9919df4a41
 # ╟─5e2111b7-9585-43a6-9ada-1d0fa7a5a49f
@@ -228,7 +230,7 @@ end
 # ╟─64f8cc10-b20e-460d-a0cd-07077e3d808e
 # ╟─f0891d30-3e0d-4218-b727-5e85bccb340e
 # ╠═d6bab3df-c3e2-47b2-aa0f-854ee8617155
-# ╟─35eeff7c-1145-4172-b2a5-6614edba2547
+# ╠═35eeff7c-1145-4172-b2a5-6614edba2547
 # ╟─103007f0-144b-11ee-02df-6ff3fc7c0678
 # ╟─678b6f59-0bf7-48a0-afb1-51370a6f2871
 # ╠═e4d7976f-2e67-4119-a809-74b5e12d0d5c
