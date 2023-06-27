@@ -75,6 +75,29 @@ Set your discharge modifier as a percentage below. The discharge curve is immedi
 # ╔═╡ a73c7c2b-ac66-4b78-a0a7-36cb73637764
 states, reports, extra = run_battery_1d(info_level = -1, end_report = true, extra_timing = false);
 
+# ╔═╡ 74263966-438a-4e42-9ebd-0e840077b8e9
+
+
+# ╔═╡ 25bfa365-36e8-41fd-a5b8-2a2f8b80b720
+perc = @sprintf "%3.2f%%" 100+c_factor
+
+# ╔═╡ 28d1cb26-1cbf-4c96-9e4e-3eb1f20edad0
+html"""
+<style>
+input[type*="range"] {
+	width: 100%;
+}
+</style>
+"""
+
+
+# ╔═╡ d9c74eb9-138d-4449-ba8b-a127ac08a0c0
+function get_cap(states, dt)
+	E    = [state[:BPP][:Phi][1] for state in states]
+	I    = [state[:BPP][:Current][1] for state in states]
+	cap  = cumsum(I.*dt)/3600 # in Ah
+end
+
 # ╔═╡ 63005f86-bd56-46e3-934f-57a10af8a060
 begin
 	state0 = extra[:state0]
@@ -86,6 +109,7 @@ begin
 	timesteps0 = extra[:timesteps]
 	time0 = cumsum(timesteps0)
 	timesteps = repeat(timesteps0, 2)
+	cap0 = get_cap(states, timesteps0)
     
     time = cumsum(timesteps)
     E    = [state[:BPP][:Phi][1] for state in states]
@@ -108,29 +132,25 @@ begin
     forces_new = setup_forces(model, BPP = currents) 
 
 	states_new, report_new = simulate!(sim, timesteps, config = config, forces = forces_new, state0 = state0)
+
+	cap_new = get_cap(states_new, timesteps)
 	
 	E_new = [state[:BPP][:Phi][1] for state in states_new];
 end
 
-# ╔═╡ 64f8cc10-b20e-460d-a0cd-07077e3d808e
-stats = Jutul.report_stats(report_new);
-
-# ╔═╡ 74263966-438a-4e42-9ebd-0e840077b8e9
-
-
-# ╔═╡ 25bfa365-36e8-41fd-a5b8-2a2f8b80b720
-perc = @sprintf "%3.2f%%" 100+c_factor
-
 # ╔═╡ aa97a563-e004-4c34-9a59-485a7029f046
 begin
-	plot(time0, E, label = "Base case", lw = 3)
-	plot!(time, E_new, label = "Your choice", lw = 3, ls = :dash)
+	plot(cap0, E, label = "Base case", lw = 3)
+	plot!(cap_new, E_new, label = "Your choice", lw = 3, ls = :dash)
 	tmp = @sprintf "%3.2f" c_factor
 	title!("Discharge rate scale = $perc")
-	xlabel!("Time / s")
-	ylabel!("Voltage / V")
+	xlabel!("Capacity (Ah)")
+	ylabel!("Voltage (V)")
 end
 
+
+# ╔═╡ 64f8cc10-b20e-460d-a0cd-07077e3d808e
+stats = Jutul.report_stats(report_new);
 
 # ╔═╡ ef9d0c67-8dae-4b67-8471-0dbcea7da9c1
 time_spent = @sprintf "%3.1f ms" stats.time_sum.total*1000
@@ -141,20 +161,10 @@ md"
 Last simulation performed $(stats.newtons) Newton iterations in $time_spent
 "
 
-# ╔═╡ 28d1cb26-1cbf-4c96-9e4e-3eb1f20edad0
-html"""
-<style>
-input[type*="range"] {
-	width: 100%;
-}
-</style>
-"""
-
-
 # ╔═╡ Cell order:
 # ╟─752a8f85-e7a8-4fce-9b8f-c3089d18967a
 # ╟─24b9f4ef-ab5c-4c80-af83-f16884a27732
-# ╟─aa97a563-e004-4c34-9a59-485a7029f046
+# ╠═aa97a563-e004-4c34-9a59-485a7029f046
 # ╟─5e5f8eff-344e-4760-ac12-558ffc1344ee
 # ╟─58a378b1-9bcc-4779-a1d9-8a9919df4a41
 # ╟─5e2111b7-9585-43a6-9ada-1d0fa7a5a49f
@@ -176,3 +186,4 @@ input[type*="range"] {
 # ╠═25bfa365-36e8-41fd-a5b8-2a2f8b80b720
 # ╠═ef9d0c67-8dae-4b67-8471-0dbcea7da9c1
 # ╠═28d1cb26-1cbf-4c96-9e4e-3eb1f20edad0
+# ╠═d9c74eb9-138d-4449-ba8b-a127ac08a0c0
