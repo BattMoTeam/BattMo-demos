@@ -66,17 +66,11 @@ Set your discharge modifier as a percentage below. The discharge curve is quickl
 # ╔═╡ 58a378b1-9bcc-4779-a1d9-8a9919df4a41
 @bind c_delta Slider(range(-0.1, 10.0, length = 100), default = 0.0)
 
-# ╔═╡ c90f74ed-35ac-4cb3-a52f-dc80624fea4e
-
-
 # ╔═╡ f0891d30-3e0d-4218-b727-5e85bccb340e
 md"""
-# Visualize the P2D particle model
-Drag the slider to show the concentration values at different discretization nodes.
+## Visualize the P2D particle model at each step
+Drag the slider to show the concentration values at different time-steps. The particle model contains 10 particles at every point inside the negative and positive active materials.
 """
-
-# ╔═╡ d6bab3df-c3e2-47b2-aa0f-854ee8617155
-@bind particle_index Slider(1:10, default = 1)
 
 # ╔═╡ 678b6f59-0bf7-48a0-afb1-51370a6f2871
 
@@ -151,34 +145,38 @@ begin
 	E_new = [state[:BPP][:Phi][1] for state in states_new];
 end
 
+# ╔═╡ d6bab3df-c3e2-47b2-aa0f-854ee8617155
+@bind timestep_ix Slider(eachindex(states_new), default = 1)
+
+# ╔═╡ 35eeff7c-1145-4172-b2a5-6614edba2547
+begin
+	# f = x -> x[:ELYTE][:C]
+	function get_data_local(f::Symbol)
+		return states_new[timestep_ix][f][:Cp]
+	end
+	f3 = x -> x[:ELYTE][:C]
+
+	x3 = map(f3, states_new)
+	C_elyte = states_new[timestep_ix][:ELYTE][:C]
+	ns = length(states_new)
+	p1 = contourf(get_data_local(:NAM), title = "Negative material", ticks = false)
+	p2 = contourf(get_data_local(:PAM), title = "Positive material", ticks = false)
+	p3 = plot(C_elyte, title = "Electrolyte (step $timestep_ix)", legend = false, lw = 3, lc = :black)
+
+	cmax = maximum(map(x -> maximum(x[:ELYTE][:C]), states_new))
+	ylims!(0, cmax)
+	l = @layout [b{0.5h}
+	grid(1,2)
+             
+	]
+	plot(p3, p1, p2, layout = l)
+end
+
 # ╔═╡ 64f8cc10-b20e-460d-a0cd-07077e3d808e
 stats = Jutul.report_stats(reports);
 
 # ╔═╡ ef9d0c67-8dae-4b67-8471-0dbcea7da9c1
 time_spent = @sprintf "%3.1f ms" stats.time_sum.total*1000
-
-# ╔═╡ 35eeff7c-1145-4172-b2a5-6614edba2547
-begin
-	# f = x -> x[:ELYTE][:C]
-	f1 = x -> x[:NAM][:Cp][particle_index, :]
-	f2 = x -> x[:PAM][:Cp][particle_index, :]
-	f3 = x -> x[:ELYTE][:C]
-
-	x1 = map(f1, states_new)
-	x2 = map(f2, states_new)
-	x3 = map(f3, states_new)
-
-	ns = length(states_new)
-	@info size(hcat(x1...)') ns length(cap_new)
-	p1 = contourf(hcat(x1...)', title = "Negative material", ticks = false)
-	p2 = contourf(hcat(x2...)', title = "Positive material", ticks = false)
-	p3 = contourf(hcat(x3...)', title = "Electrolyte", ticks = false)
-
-	l = @layout [grid(1,2)
-             b{0.5h}
-	]
-	plot(p1, p2, p3, layout = l)
-end
 
 # ╔═╡ 25bfa365-36e8-41fd-a5b8-2a2f8b80b720
 perc = @sprintf "%3.2f" c0+c_delta
@@ -219,19 +217,22 @@ begin
 end
 
 
+# ╔═╡ 57a19639-a57d-4cc2-92d4-3757793d0c27
+# plotly()
+gr()
+
 # ╔═╡ Cell order:
 # ╟─752a8f85-e7a8-4fce-9b8f-c3089d18967a
 # ╟─24b9f4ef-ab5c-4c80-af83-f16884a27732
-# ╠═aa97a563-e004-4c34-9a59-485a7029f046
+# ╟─aa97a563-e004-4c34-9a59-485a7029f046
 # ╟─5e5f8eff-344e-4760-ac12-558ffc1344ee
 # ╠═58a378b1-9bcc-4779-a1d9-8a9919df4a41
 # ╟─5e2111b7-9585-43a6-9ada-1d0fa7a5a49f
-# ╠═c90f74ed-35ac-4cb3-a52f-dc80624fea4e
-# ╟─64f8cc10-b20e-460d-a0cd-07077e3d808e
 # ╟─f0891d30-3e0d-4218-b727-5e85bccb340e
-# ╠═d6bab3df-c3e2-47b2-aa0f-854ee8617155
-# ╠═35eeff7c-1145-4172-b2a5-6614edba2547
+# ╟─d6bab3df-c3e2-47b2-aa0f-854ee8617155
+# ╟─35eeff7c-1145-4172-b2a5-6614edba2547
 # ╟─103007f0-144b-11ee-02df-6ff3fc7c0678
+# ╟─64f8cc10-b20e-460d-a0cd-07077e3d808e
 # ╟─678b6f59-0bf7-48a0-afb1-51370a6f2871
 # ╠═e4d7976f-2e67-4119-a809-74b5e12d0d5c
 # ╟─114c991c-3a32-4311-ba82-b48a6487c473
@@ -249,3 +250,4 @@ end
 # ╠═28d1cb26-1cbf-4c96-9e4e-3eb1f20edad0
 # ╠═d9c74eb9-138d-4449-ba8b-a127ac08a0c0
 # ╠═5b602e28-12ae-4d78-ab4d-9bd460ae442b
+# ╠═57a19639-a57d-4cc2-92d4-3757793d0c27
