@@ -47,20 +47,34 @@ md"
 "
 
 # ╔═╡ 24b9f4ef-ab5c-4c80-af83-f16884a27732
-md"
-# 🔋 Welcome to the BattMo.jl demo 🔋
-BattMo.jl is a Julia version of the BattMo toolbox that provides:
-- Much faster performance
+md"""
+# 🔋 BattMo.jl demo 🔋
+
+[BattMo.jl](https://github.com/BattMoTeam/BattMo.jl) is a Julia version of the [BattMo
+toolbox](https://github.com/BattMoTeam/BattMo) (originaly developed in Matlab) that provides:
+
+- Faster performance
 - No need for a MATLAB license
 - Integration with Julia ecosystem, including optimization frameworks
-"
+
+In this demo, we use Pluto for Julia, which provides integration in a browser (interaction tools and result
+display). You can download the code [here](https://github.com/BattMoTeam/BattMo-demos) and try it yourself! (The
+instructions for pluto are in the short [README
+file](https://github.com/BattMoTeam/BattMo-demos/blob/main/HYDRA-International-Workshop-2023/README.md))
+"""
+
 
 # ╔═╡ 5e5f8eff-344e-4760-ac12-558ffc1344ee
 
-md"
-## Try adjusting the discharge rate
-Set your discharge modifier as a percentage below. The discharge curve is quickly updated after a full fast simulation is run using BattMo.jl!
-"
+md""""
+## Discharge simulation with varying C-Rate
+
+In this example, we set up a standard P2D problem and vary the C-Rate. The data is from [Chen et al
+(2020)](https://iopscience.iop.org/article/10.1149/1945-7111/ab9050/meta) Chen, see [json
+file](https://github.com/BattMoTeam/BattMo.jl/blob/main/test/battery/data/jsonfiles/p2d_40_jl.json)
+
+Modify the C-Rate as a percentage below. The discharge curve is instanteniously updated.
+"""
 
 
 # ╔═╡ 58a378b1-9bcc-4779-a1d9-8a9919df4a41
@@ -68,8 +82,14 @@ Set your discharge modifier as a percentage below. The discharge curve is quickl
 
 # ╔═╡ f0891d30-3e0d-4218-b727-5e85bccb340e
 md"""
-## Visualize the P2D particle model at each step
-Drag the slider to show the concentration values at different time-steps. The particle model contains 10 particles at every point inside the negative and positive active materials.
+## Visualize the evolution of the concentrations in the cell
+
+We plot the concentration in the electolyte and the in the electrodes at time evolves.
+
+For the P2D electrode model, the y-axis represent the concentration in the radial direction in the particle located at
+the spatial position given by the x-axis.
+
+Drag the slider to show the concentration values at different time-steps.
 """
 
 # ╔═╡ 678b6f59-0bf7-48a0-afb1-51370a6f2871
@@ -248,7 +268,7 @@ Last simulation performed $(stats.newtons) Newton iterations in $time_spent
 
 # ╔═╡ Cell order:
 # ╟─752a8f85-e7a8-4fce-9b8f-c3089d18967a
-# ╟─24b9f4ef-ab5c-4c80-af83-f16884a27732
+# ╠═24b9f4ef-ab5c-4c80-af83-f16884a27732
 # ╟─aa97a563-e004-4c34-9a59-485a7029f046
 # ╟─5e5f8eff-344e-4760-ac12-558ffc1344ee
 # ╟─58a378b1-9bcc-4779-a1d9-8a9919df4a41
