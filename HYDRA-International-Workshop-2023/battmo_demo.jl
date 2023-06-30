@@ -32,8 +32,11 @@ Pkg.add("JSON")
 # ╔═╡ edec07c4-6e80-499a-92ec-c748dccfa34c
 Pkg.add("PlutoUI")
 
+# ╔═╡ 6029a633-0797-4bbb-8a6a-40d5f97b1ee1
+Pkg.add("Measures")
+
 # ╔═╡ 1431be70-414f-4189-8674-3556a5728d32
-using BattMo, Jutul, Plots, PlutoUI, Printf
+using BattMo, Jutul, Plots, PlutoUI, Printf, Measures
 
 # ╔═╡ 77ba22b5-35aa-4195-a0e2-4ba40406a04c
 begin
@@ -59,7 +62,7 @@ toolbox](https://github.com/BattMoTeam/BattMo) (originaly developed in Matlab) t
 
 In this demo, we use Pluto for Julia, which provides integration in a browser (interaction tools and result
 display). You can download the code [here](https://github.com/BattMoTeam/BattMo-demos) and try it yourself! (The
-instructions for pluto are in the short [README
+instructions for Pluto are in the short [README
 file](https://github.com/BattMoTeam/BattMo-demos/blob/main/HYDRA-International-Workshop-2023/README.md))
 """
 
@@ -73,7 +76,7 @@ In this example, we set up a standard P2D problem and vary the C-Rate. The data 
 (2020)](https://iopscience.iop.org/article/10.1149/1945-7111/ab9050/meta) Chen, see [json
 file](https://github.com/BattMoTeam/BattMo.jl/blob/main/test/battery/data/jsonfiles/p2d_40_jl.json)
 
-Modify the C-Rate as a percentage below. The discharge curve is instanteniously updated.
+Modify the C-Rate as a percentage below. The discharge curve is instantaneously updated.
 """
 
 
@@ -206,13 +209,14 @@ begin
         z  = states_new[timestep_ix][name][:Cp]/1000 # We convert to mol/litre
 	return (x, r, z)
     end
+	cbarfn(x) = @sprintf "%1.1f" x
     C_elyte = states_new[timestep_ix][:ELYTE][:C]/1000 # We convert to mol/litre
     ns = length(states_new)
-    options = (xlabel="x / [µm]", ylabel="r / [µm]", colorbar_title="mol/L")
+    options = (xlabel="x / [µm]", ylabel="r / [µm]")
     (x, r, z) = get_data_local(:NAM)
-    p1 = contourf((x, r, z), title = "Negative material", xticks = x[[1, end]], yticks = r[[1, end]]; options...)
+    p1 = contourf((x, r, z), title = "Negative material / mol/L", xticks = x[[1, end]], yticks = r[[1, end]]; options..., right_margin = 3.5mm)
     (x, r, z) = get_data_local(:PAM)
-    p2 = contourf((x, r, z), title = "Positive material", xticks = x[[1, end]], yticks = r[[1, end]]; options...)
+    p2 = contourf((x, r, z), title = "Positive material / mol/L", xticks = x[[1, end]], yticks = r[[1, end]]; options..., left_margin = 3.5mm)
     x = vec(model[:ELYTE].domain.representation[:cell_centroids])*1e6 # We convert to µm
     p3 = plot(x, C_elyte,
               title = "Electrolyte (step $timestep_ix)",
@@ -268,13 +272,13 @@ Last simulation performed $(stats.newtons) Newton iterations in $time_spent
 
 # ╔═╡ Cell order:
 # ╟─752a8f85-e7a8-4fce-9b8f-c3089d18967a
-# ╠═24b9f4ef-ab5c-4c80-af83-f16884a27732
+# ╟─24b9f4ef-ab5c-4c80-af83-f16884a27732
 # ╟─aa97a563-e004-4c34-9a59-485a7029f046
 # ╟─5e5f8eff-344e-4760-ac12-558ffc1344ee
 # ╟─58a378b1-9bcc-4779-a1d9-8a9919df4a41
-# ╠═5e2111b7-9585-43a6-9ada-1d0fa7a5a49f
+# ╟─5e2111b7-9585-43a6-9ada-1d0fa7a5a49f
 # ╟─f0891d30-3e0d-4218-b727-5e85bccb340e
-# ╠═d6bab3df-c3e2-47b2-aa0f-854ee8617155
+# ╟─d6bab3df-c3e2-47b2-aa0f-854ee8617155
 # ╟─35eeff7c-1145-4172-b2a5-6614edba2547
 # ╟─103007f0-144b-11ee-02df-6ff3fc7c0678
 # ╟─64f8cc10-b20e-460d-a0cd-07077e3d808e
@@ -284,6 +288,7 @@ Last simulation performed $(stats.newtons) Newton iterations in $time_spent
 # ╟─ad84c33c-61a3-4533-965e-f19b0922f52f
 # ╟─47bdbfc9-d3d9-48d0-b300-57ef4b98969c
 # ╟─edec07c4-6e80-499a-92ec-c748dccfa34c
+# ╠═6029a633-0797-4bbb-8a6a-40d5f97b1ee1
 # ╠═1431be70-414f-4189-8674-3556a5728d32
 # ╠═a73c7c2b-ac66-4b78-a0a7-36cb73637764
 # ╠═71a806ef-53af-4012-b1c7-37d2b24498b8
